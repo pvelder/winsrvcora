@@ -34,7 +34,7 @@ func usage(errmsg string) {
 }
 
 func main() {
-	const svcName = "myservice"
+	const svcName = "IliasOraStdbyLogApplier"
 
 	isIntSess, err := svc.IsAnInteractiveSession()
 	if err != nil {
@@ -55,7 +55,7 @@ func main() {
 		runService(svcName, true)
 		return
 	case "install":
-		err = installService(svcName, "my service")
+		err = installService(svcName, "Ilias Oracle StandBy Log Applier")
 	case "remove":
 		err = removeService(svcName)
 	case "start":

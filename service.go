@@ -28,7 +28,7 @@ func (m *myservice) Execute(args []string, r <-chan svc.ChangeRequest, changes c
 	// slowtick := time.Tick(2 * time.Second)
 	// tick := fasttick
 
-	go oracle.WatchOracleArchiveLogs()
+	oracle.WatchOracleArchiveLogs()
 
 	changes <- svc.Status{State: svc.Running, Accepts: cmdsAccepted}
 loop:

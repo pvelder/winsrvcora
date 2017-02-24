@@ -8,6 +8,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/fsnotify/fsnotify"
+	_ "github.com/mattn/go-oci8"
 )
 
 type tomlConfig struct {
@@ -41,11 +42,14 @@ func DoWatchLogs(directoryToWatch string) {
 
 	log.SetOutput(f)
 
+	log.Println("One")
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
+	log.Println("Two")
 
 	done := make(chan bool)
 
@@ -58,11 +62,13 @@ func DoWatchLogs(directoryToWatch string) {
 	}
 	defer db.Close()
 
+	log.Println("Three")
+
 	go func() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				// log.Println("event:", event)
+				log.Println("event:", event)
 				if event.Op&fsnotify.Create == fsnotify.Create {
 					// log.Println("modified file:", event.Name)
 					log.Println("alter database register logfile '" + event.Name + "'")
@@ -73,8 +79,12 @@ func DoWatchLogs(directoryToWatch string) {
 		}
 	}()
 
+	log.Println("Four")
+
 	err = watcher.Add(directoryToWatch)
 	if err != nil {
+		log.Println("Error watching directory: " + directoryToWatch)
+
 		log.Fatal(err)
 	}
 	<-done

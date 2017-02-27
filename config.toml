@@ -4,3 +4,4 @@ connectstring = "sys/Ilias4ever@//172.17.101.60:1521/DC1NS as sysdba"
 
 [filesystem]
 watchDirectory="D:\\oracle\\fast_recovery_area\\DC1UN"
+logFile="D:\\logapplier.log"

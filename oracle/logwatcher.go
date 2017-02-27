@@ -23,6 +23,7 @@ type database struct {
 
 type filesystem struct {
 	WatchDirectory string
+	LogFile        string
 }
 
 var config tomlConfig
@@ -31,7 +32,7 @@ func DoWatchLogs(directoryToWatch string) {
 
 	// logging to file
 	// TODO configure
-	f, err := os.OpenFile("D:\\logapplier.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	f, err := os.OpenFile(config.FS.LogFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		// TODO : log to service default output?
 		// t.Fatalf("error opening file: %v", err)
@@ -42,14 +43,15 @@ func DoWatchLogs(directoryToWatch string) {
 
 	log.SetOutput(f)
 
-	log.Println("One")
+	// log.Println("One")
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer watcher.Close()
-	log.Println("Two")
+
+	// log.Println("Two")
 
 	done := make(chan bool)
 
@@ -62,16 +64,17 @@ func DoWatchLogs(directoryToWatch string) {
 	}
 	defer db.Close()
 
-	log.Println("Three")
+	// log.Println("Three")
 
 	go func() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				log.Println("event:", event)
+				// log.Println("event:", event)
 				if event.Op&fsnotify.Create == fsnotify.Create {
-					// log.Println("modified file:", event.Name)
-					log.Println("alter database register logfile '" + event.Name + "'")
+					cmd := fmt.Sprintf("alter database register logfile '%s'", event.Name)
+					log.Println(cmd)
+					// db.Exec(cmd)
 				}
 			case err := <-watcher.Errors:
 				log.Println("error:", err)
@@ -79,9 +82,10 @@ func DoWatchLogs(directoryToWatch string) {
 		}
 	}()
 
-	log.Println("Four")
+	// log.Println("Four")
 
 	err = watcher.Add(directoryToWatch)
+	log.Println("Watching directory: " + directoryToWatch)
 	if err != nil {
 		log.Println("Error watching directory: " + directoryToWatch)
 
@@ -93,8 +97,8 @@ func DoWatchLogs(directoryToWatch string) {
 func WatchOracleArchiveLogs() {
 
 	// TODO refer to toml.config using command line argument,
-	// falling back to default e.g ${home}/.../config.toml
-	if _, err := toml.DecodeFile("D:\\config.toml", &config); err != nil {
+	// falling back to default "current" directory, or default e.g ${home}/.../config.toml ?
+	if _, err := toml.DecodeFile("config.toml", &config); err != nil {
 		fmt.Println(err)
 		return
 	}

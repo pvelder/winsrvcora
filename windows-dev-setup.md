@@ -2,7 +2,7 @@ Setting up a development environment on Windows
 ===============================================
 
 In order to create an oci-connection to an Oracle database, we have to setup a development on windows, 
-installing some extra tooling so we can compile go-code which uses the mattn/oci8 code:  
+installing some extra tooling so we can compile go-code which uses the `github.com/mattn/go-oci8` code:  
 
 
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/fsnotify/fsnotify"
@@ -17,8 +18,9 @@ type tomlConfig struct {
 }
 
 type database struct {
-	Type          string
-	Connectstring string
+	Type           string
+	Connectstring  string
+	ApplyStatement string
 }
 
 type filesystem struct {
@@ -27,6 +29,36 @@ type filesystem struct {
 }
 
 var config tomlConfig
+
+func Apply(filename string) {
+	// should we use a dedicated connection to the database?
+	// or only open the connection when archive logs are detected?
+	db, err := sql.Open(config.DB.Type, config.DB.Connectstring)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+
+	if err = db.Ping(); err != nil {
+		fmt.Printf("Error connecting to the database: %s\n", err)
+		return
+	}
+
+	applyTemplate := config.DB.ApplyStatement
+	cmd := fmt.Sprintf(applyTemplate, filename)
+	log.Println("Start Applying: " + cmd)
+	result, error := db.Exec(cmd)
+	if error != nil {
+		log.Println("Error:")
+		log.Println(error)
+		log.Println("Result:")
+		log.Println(result)
+		return
+	}
+	log.Println("Applied ...")
+
+}
 
 func DoWatchLogs(directoryToWatch string) {
 
@@ -55,26 +87,33 @@ func DoWatchLogs(directoryToWatch string) {
 
 	done := make(chan bool)
 
-	// should we use a dedicated connection to the database?
-	// or only open the connection when archive logs are detected?
-	db, err := sql.Open(config.DB.Type, config.DB.Connectstring)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer db.Close()
-
 	// log.Println("Three")
 
 	go func() {
 		for {
 			select {
 			case event := <-watcher.Events:
-				// log.Println("event:", event)
+
+				log.Println("event ouside :", event)
+
 				if event.Op&fsnotify.Create == fsnotify.Create {
-					cmd := fmt.Sprintf("alter database register logfile '%s'", event.Name)
-					log.Println(cmd)
-					// db.Exec(cmd)
+
+					filename := event.Name
+
+					// wait until file is fully written
+					// http://stackoverflow.com/questions/13434555/hotfolder-in-go-wait-for-file-to-be-written
+					for {
+						timer := time.NewTimer(1 * time.Second)
+						select {
+						case ev := <-watcher.Events:
+							log.Println("event inside", ev)
+						case err := <-watcher.Errors:
+							log.Println("error inside:", err)
+						case <-timer.C:
+							Apply(filename)
+						}
+						timer.Stop()
+					}
 				}
 			case err := <-watcher.Errors:
 				log.Println("error:", err)

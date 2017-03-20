@@ -1,6 +1,13 @@
 [database]
 type = "oci8"
-connectstring = "sys/Ilias4ever@//172.17.101.60:1521/DC1NS as sysdba"
+#connectstring = "sys/Ilias4ever@//172.17.101.60:1521/DC1NS as sysdba"  # does not work wit "as sysdba"
+
+# create user logapplier identified by "Ilias4ever"
+# create session to logapplier;
+# grant alter database to logapplier;
+connectstring = "logapplier/Ilias4ever@//172.17.101.60:1521/DC1NS"
+
+applyStatement = "alter database register logfile '%s'"
 
 [filesystem]
 watchDirectory="D:\\oracle\\fast_recovery_area\\DC1UN"
